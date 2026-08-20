@@ -94,6 +94,12 @@ body {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-dim);
+  /* Frameless window: the header doubles as a drag region */
+  -webkit-app-region: drag;
+}
+
+.sidebar-header button {
+  -webkit-app-region: no-drag;
 }
 
 .sidebar-count {

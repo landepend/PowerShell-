@@ -64,7 +64,16 @@ function bootstrap(): void {
   })
   const sessions = new SessionManager(
     { workspace, pty: ptyManager, shellIntegration, logger },
-    (state) => win?.webContents.send(IPC.StateChanged, state)
+    (state) => {
+      // Frameless window: keep the native overlay buttons in sync with theme.
+      const light = state.theme === 'light'
+      win?.setTitleBarOverlay({
+        color: light ? '#ffffff' : '#151517',
+        symbolColor: light ? '#1b1b1c' : '#f9fafb',
+        height: 36
+      })
+      win?.webContents.send(IPC.StateChanged, state)
+    }
   )
   const chatRunner = new ChatRunner(dataDir, logger)
   const chats = new ChatManager(
@@ -135,6 +144,15 @@ function bootstrap(): void {
     minHeight: 600,
     backgroundColor: workspace.state.ui.theme === 'light' ? '#ffffff' : '#0b0d12',
     title: 'PowerShell++',
+    // Frameless with native overlay controls (min/max/close top-right);
+    // drag regions come from CSS (-webkit-app-region).
+    autoHideMenuBar: true,
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: workspace.state.ui.theme === 'light' ? '#ffffff' : '#151517',
+      symbolColor: workspace.state.ui.theme === 'light' ? '#1b1b1c' : '#f9fafb',
+      height: 36
+    },
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

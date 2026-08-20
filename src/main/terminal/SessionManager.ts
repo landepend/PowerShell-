@@ -396,8 +396,11 @@ export class SessionManager {
     // project's CLI config; CLI-typed sessions launch their command;
     // PowerShell sessions relaunch whatever CLI was snapshotted at the last
     // quit (e.g. kimi was running when the app closed).
-    // A bare `kimi` command relaunches as `kimi --continue` so the most
-    // recent conversation in this cwd comes back instead of a fresh session.
+    // Any kimi invocation (bare, with args, or behind an env prefix like
+    // `$env:X='y'; kimi ...`) relaunches with `--continue` appended so the
+    // most recent conversation in this cwd comes back instead of a fresh
+    // session. Skipped when the command already resumes/prints
+    // (--continue / --session / -p) or runs a subcommand (kimi web …).
     const project = session.projectId ? this.findProject(session.projectId) : undefined
     let startup: string | undefined
     if (project) {
@@ -406,7 +409,16 @@ export class SessionManager {
     } else {
       startup = session.type === 'powershell' ? session.startupCommand : session.command
     }
-    if (startup === 'kimi') startup = 'kimi --continue'
+    if (
+      startup &&
+      /(?:^|;\s*)kimi(?:\s|$)/.test(startup) &&
+      !/--continue|--session\b|--prompt\b|\s-p(?:\s|$)/.test(startup) &&
+      !/(?:^|;\s*)kimi\s+(?:export|provider|acp|web|server|login|doctor|vis|migrate|upgrade|update)\b/.test(
+        startup
+      )
+    ) {
+      startup = `${startup} --continue`
+    }
     const args = this.deps.shellIntegration.spawnArgs(startup)
     try {
       const onExit = (exitCode: number) => {
