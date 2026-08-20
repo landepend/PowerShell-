@@ -337,6 +337,18 @@
   white-space: nowrap;
 }
 
+/* Relative time at row right; fades out on hover where row buttons appear */
+.chat-item-time {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--chat-label-4);
+  transition: opacity 0.15s var(--chat-ease);
+}
+
+.chat-item:hover .chat-item-time {
+  opacity: 0;
+}
+
 /* Hover-revealed row buttons (📌 pin-off, ✎ new chat, ··· menu) */
 .chat-item-btn {
   position: absolute;
@@ -789,6 +801,7 @@
 .chat-msg-user.queued {
   opacity: 0.65;
   border: 1px dashed var(--chat-border-2);
+  animation: pop-in 0.15s ease;
 }
 
 .chat-queued-tag {
@@ -1523,6 +1536,14 @@
   border-radius: 12px;
   border: 1px solid var(--chat-border-1);
   cursor: zoom-in;
+  transition:
+    transform 0.2s var(--chat-ease),
+    box-shadow 0.2s var(--chat-ease);
+}
+
+.chat-msg-image:hover {
+  transform: scale(1.02);
+  box-shadow: var(--chat-shadow-lv2);
 }
 
 .chat-msg-file {

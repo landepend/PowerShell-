@@ -117,7 +117,7 @@ export function ChatView({ chatId }: { chatId: string }) {
 
   const scrollToBottom = () => {
     const el = listRef.current
-    if (el) el.scrollTop = el.scrollHeight
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }
 
   const openInTerminal = async () => {

@@ -7,6 +7,24 @@ import type { AppInfo } from '../../../shared/types/api'
 import type { ChatMeta } from '../../../shared/types/chat'
 import type { ProjectMeta } from '../../../shared/types/session'
 
+/** Compact relative time for sidebar rows: 刚刚 / N分钟前 / N小时前 / 昨天 / M月d日 */
+function relTime(iso: string): string {
+  const t = Date.parse(iso)
+  if (Number.isNaN(t)) return ''
+  const diff = Date.now() - t
+  const min = Math.floor(diff / 60000)
+  if (min < 1) return '刚刚'
+  if (min < 60) return `${min}分钟前`
+  const hours = Math.floor(min / 60)
+  if (hours < 24) return `${hours}小时前`
+  const d = new Date(t)
+  const now = new Date()
+  const yesterday = new Date(now)
+  yesterday.setDate(now.getDate() - 1)
+  if (d.toDateString() === yesterday.toDateString()) return '昨天'
+  return `${d.getMonth() + 1}月${d.getDate()}日`
+}
+
 function ChatRow({ chat, active }: { chat: ChatMeta; active: boolean }) {
   const openChat = useChatStore((s) => s.openChat)
   const openHome = useChatStore((s) => s.openHome)
@@ -34,6 +52,7 @@ function ChatRow({ chat, active }: { chat: ChatMeta; active: boolean }) {
       ) : (
         <span className="chat-item-title">{chat.title || '新对话'}</span>
       )}
+      {!renaming && <span className="chat-item-time">{relTime(chat.lastActiveAt)}</span>}
       {chat.pinned && (
         <button
           className="chat-item-btn pin"

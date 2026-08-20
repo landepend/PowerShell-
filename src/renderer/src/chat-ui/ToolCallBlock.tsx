@@ -38,13 +38,27 @@ function extractCommand(name: string, args: string): string | null {
   return null
 }
 
+/** Tool-type icon for the collapsed header row. */
+function toolIcon(name: string): string {
+  const n = name.toLowerCase()
+  if (/bash|shell|run|exec|powershell|cmd/.test(n)) return '⌨'
+  if (/read/.test(n)) return '📄'
+  if (/edit|write|create/.test(n)) return '✎'
+  if (/grep|glob|search|find/.test(n)) return '🔍'
+  if (/fetch|web|http|url/.test(n)) return '🌐'
+  if (/agent|task|swarm/.test(n)) return '🤖'
+  if (/todo|plan/.test(n)) return '☑'
+  if (/skill/.test(n)) return '⚡'
+  return '🔧'
+}
+
 export function ToolCallBlock({ name, arguments: args, result }: ToolCallBlockProps) {
   const [open, setOpen] = useState(false)
   const command = extractCommand(name, args)
   return (
     <div className={`chat-tool${open ? ' open' : ''}`}>
       <button className="chat-tool-head" onClick={() => setOpen((v) => !v)}>
-        <span className="chat-tool-icon">🔧</span>
+        <span className="chat-tool-icon">{toolIcon(name)}</span>
         <span className="chat-tool-title">{name}</span>
         <span className="chat-tool-summary">{summarize(args)}</span>
         {!result && <span className="chat-tool-running">执行中…</span>}
