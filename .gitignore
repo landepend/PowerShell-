@@ -1,0 +1,11 @@
+node_modules/
+out/
+dist/
+release/
+data/
+logs/
+*.tmp
+.DS_Store
+
+# Internal design doc, kept local (contains private paths)
+/PowerShellShell 产品需求文档 PRD.md
