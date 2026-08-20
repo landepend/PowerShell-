@@ -16,6 +16,7 @@ import { ChatManager } from './chat/ChatManager'
 import { isImagePath } from './chat/attachments'
 import { getCliOptions } from './terminal/CliConfigReader'
 import { getKimiUsage } from './terminal/KimiUsage'
+import { runSmoke } from './smoke'
 import type { CliKind } from '../shared/types/session'
 
 // Custom scheme for chat image previews in the renderer
@@ -193,11 +194,13 @@ function bootstrap(): void {
   })
 
   if (process.env.PSS_SMOKE) {
-    setTimeout(() => {
-      logger.log('Smoke Test Complete', JSON.stringify(sessions.getState().sessions.map((s) => s.id)))
-      // go through the real close path (flush workspace + kill all PTYs)
-      win?.close()
-    }, 8000)
+    runSmoke({
+      sessions,
+      chats,
+      logger,
+      dataDir,
+      close: () => win?.close()
+    })
   }
 }
 
