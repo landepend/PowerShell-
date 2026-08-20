@@ -177,7 +177,8 @@ export function AppSidebar() {
   const chats = useChatStore((s) => s.chats)
   const projects = useChatStore((s) => s.projects)
   const openHome = useChatStore((s) => s.openHome)
-  const openTerminal = useChatStore((s) => s.openTerminal)
+  const terminalOpen = useChatStore((s) => s.terminalOpen)
+  const toggleTerminalPane = useChatStore((s) => s.toggleTerminalPane)
   const openSettings = useChatStore((s) => s.openSettings)
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
   const [newProjectCwd, setNewProjectCwd] = useState<string | null>(null)
@@ -250,10 +251,10 @@ export function AppSidebar() {
           <span className="chat-navrow-end">⊕</span>
         </button>
         <button
-          className={`chat-navrow${view.kind === 'terminal' ? ' active' : ''}`}
-          onClick={openTerminal}
+          className={`chat-navrow${terminalOpen ? ' active' : ''}`}
+          onClick={() => toggleTerminalPane()}
         >
-          <span>▸ 终端会话</span>
+          <span>▸ 终端面板</span>
         </button>
       </div>
 

@@ -4,7 +4,13 @@ import { useSessionStore } from '../stores/sessionStore'
 import type { ChatAttachment, ChatEvent, ChatMessage, ChatMeta } from '../../../shared/types/chat'
 import type { ProjectMeta } from '../../../shared/types/session'
 
-export type ChatUiView = { kind: 'home' } | { kind: 'chat'; chatId: string } | { kind: 'terminal' }
+export type ChatUiView = { kind: 'home' } | { kind: 'chat'; chatId: string }
+
+/** Windows path compare: case-insensitive, slash-agnostic, no trailing separator. */
+function sameCwd(a: string, b: string): boolean {
+  const norm = (p: string) => p.replace(/\//g, '\\').replace(/\\+$/, '').toLowerCase()
+  return norm(a) === norm(b)
+}
 
 /** Sections of the chat-ui settings page. */
 export type ChatSettingsSection = 'general' | 'appearance' | 'usage' | 'about'
@@ -46,6 +52,8 @@ interface ChatUiStore {
   /** Model/effort applied to chats created from the home page. */
   homeModel: string | undefined
   homeEffort: string | undefined
+  /** Right-hand terminal pane visibility (persisted in localStorage). */
+  terminalOpen: boolean
   /** Section the chat-ui settings page opens on. */
   settingsSection: ChatSettingsSection
   /** Per-chat outbox: messages typed while a turn is streaming. */
@@ -54,7 +62,10 @@ interface ChatUiStore {
   syncState(chats: ChatMeta[], projects: ProjectMeta[]): void
   openHome(projectId?: string): void
   openChat(chatId: string): void
-  openTerminal(): void
+  /** Show/hide the right-hand terminal pane (persisted in localStorage). */
+  setTerminalOpen(open: boolean): void
+  /** Toggle the pane; on open, focus (or create) the shell for the active chat. */
+  toggleTerminalPane(): void
   openSettings(section?: ChatSettingsSection): void
   setHomeTarget(target: HomeTarget | null): void
   setHomeModel(model: string | undefined): void
@@ -81,6 +92,7 @@ export const useChatStore = create<ChatUiStore>()((set, get) => ({
   homeCwd: null,
   homeModel: DEFAULT_HOME_MODEL,
   homeEffort: DEFAULT_HOME_EFFORT,
+  terminalOpen: localStorage.getItem('pss.terminalOpen') === '1',
   settingsSection: 'general',
   queue: {},
 
@@ -115,6 +127,16 @@ export const useChatStore = create<ChatUiStore>()((set, get) => ({
 
   openChat: (chatId) => {
     set({ view: { kind: 'chat', chatId } })
+    // Keep the terminal pane pointing at the shell for this chat's project.
+    if (get().terminalOpen) {
+      const chat = get().chats.find((c) => c.id === chatId)
+      const match =
+        chat &&
+        useSessionStore
+          .getState()
+          .sessions.find((s) => s.status !== 'exited' && sameCwd(s.cwd, chat.cwd))
+      if (match) void api.setActiveSession(match.id)
+    }
     if (get().loaded[chatId]) return
     set((prev) => ({ loaded: { ...prev.loaded, [chatId]: true } }))
     void api.getChatHistory(chatId).then((history) => {
@@ -122,7 +144,27 @@ export const useChatStore = create<ChatUiStore>()((set, get) => ({
     })
   },
 
-  openTerminal: () => set({ view: { kind: 'terminal' } }),
+  setTerminalOpen: (open) => {
+    localStorage.setItem('pss.terminalOpen', open ? '1' : '0')
+    set({ terminalOpen: open })
+  },
+
+  toggleTerminalPane: () => {
+    const open = !get().terminalOpen
+    get().setTerminalOpen(open)
+    if (!open) return
+    // Focus (or create) the shell matching the active chat's cwd.
+    const { view, chats } = get()
+    const chat = view.kind === 'chat' ? chats.find((c) => c.id === view.chatId) : undefined
+    const sessions = useSessionStore.getState().sessions
+    if (chat) {
+      const match = sessions.find((s) => s.status !== 'exited' && sameCwd(s.cwd, chat.cwd))
+      if (match) void api.setActiveSession(match.id)
+      else void api.createSession('powershell', undefined, chat.cwd)
+    } else if (!sessions.some((s) => s.status !== 'exited')) {
+      void api.createSession('powershell')
+    }
+  },
 
   openSettings: (section) => {
     if (section) set({ settingsSection: section })

@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import { useSessionStore } from './stores/sessionStore'
 import { terminalRegistry } from './terminalRegistry'
-import { Sidebar } from './components/Sidebar'
 import { TerminalArea } from './components/TerminalArea'
+import { TerminalPaneBar } from './components/TerminalPaneBar'
 import { ContextMenu } from './components/ContextMenu'
-import { SettingsPage } from './components/SettingsPage'
 import { initChatUi, useChatStore } from './chat-ui/store'
 import { AppSidebar } from './chat-ui/AppSidebar'
 import { HomePage } from './chat-ui/HomePage'
@@ -15,6 +14,7 @@ import './chat-ui/chat-ui.css'
 
 const MIN_SIDEBAR = 160
 const MAX_SIDEBAR = 400
+const MIN_TERM_PANE = 320
 
 export default function App() {
   const activeSessionId = useSessionStore((s) => s.activeSessionId)
@@ -22,7 +22,15 @@ export default function App() {
   const theme = useSessionStore((s) => s.theme)
   const settingsOpen = useSessionStore((s) => s.settingsOpen)
   const view = useChatStore((s) => s.view)
+  const terminalOpen = useChatStore((s) => s.terminalOpen)
   const resizingRef = useRef(false)
+  const termResizingRef = useRef(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem('pss.sidebarCollapsed') === '1'
+  )
+  const [termWidth, setTermWidth] = useState(
+    () => Number(localStorage.getItem('pss.termWidth')) || 460
+  )
 
   // Chat UI layer: own state sync + streaming chat events
   useEffect(() => initChatUi(), [])
@@ -63,6 +71,7 @@ export default function App() {
 
       if (e.shiftKey && (key === 'n' || key === 'p')) {
         void api.createSession('powershell')
+        useChatStore.getState().setTerminalOpen(true)
       } else if (!e.shiftKey && key === 'w') {
         if (store.activeSessionId) void api.closeSession(store.activeSessionId)
       } else if (key === 'tab' && ids.length > 1) {
@@ -98,37 +107,82 @@ export default function App() {
     window.addEventListener('mouseup', onUp)
   }, [])
 
-  // Chat shell covers home/chat views; settings opened from the chat UI stay
-  // inside it (chat sidebar + Codex-style ChatSettings). The terminal view
-  // keeps the old sidebar and SettingsPage. Chat views keep terminals mounted
-  // (hidden) so PTYs keep running.
-  const chatShell = view.kind !== 'terminal'
-  const chatMain = chatShell && !settingsOpen
+  // Terminal pane drag-resize (from its left edge), persisted in localStorage
+  const startTermResize = useCallback(() => {
+    termResizingRef.current = true
+    const clamp = (v: number) =>
+      Math.min(window.innerWidth - 480, Math.max(MIN_TERM_PANE, v))
+    const onMove = (e: MouseEvent) => {
+      if (!termResizingRef.current) return
+      setTermWidth(clamp(window.innerWidth - e.clientX))
+    }
+    const onUp = (e: MouseEvent) => {
+      termResizingRef.current = false
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+      localStorage.setItem('pss.termWidth', String(clamp(window.innerWidth - e.clientX)))
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [])
 
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => {
+      localStorage.setItem('pss.sidebarCollapsed', prev ? '0' : '1')
+      return !prev
+    })
+  }
+
+  // Single shell: title bar on top; below it sidebar | chat | terminal pane.
+  // The terminal pane stays mounted while hidden so PTYs keep their buffers.
   return (
-    <div className={chatShell ? 'app chat-ui' : 'app'}>
-      <div className="sidebar-wrap" style={{ width: sidebarWidth }}>
-        {chatShell ? <AppSidebar /> : <Sidebar />}
+    <div className="app chat-ui">
+      <div className="titlebar">
+        <button
+          className="titlebar-btn"
+          title={sidebarCollapsed ? '展开侧边栏' : '收起侧边栏'}
+          onClick={toggleSidebar}
+        >
+          ◧
+        </button>
+        <span className="titlebar-title">PowerShell++</span>
+        <div className="titlebar-drag" />
+        <button
+          className={`titlebar-btn${terminalOpen ? ' active' : ''}`}
+          title={terminalOpen ? '隐藏终端面板' : '显示终端面板'}
+          onClick={() => useChatStore.getState().toggleTerminalPane()}
+        >
+          ▤
+        </button>
       </div>
-      <div className="sidebar-resizer" onMouseDown={startResize} />
-      <div className="terminal-wrap">
-        {settingsOpen ? (
-          chatShell ? (
-            <ChatSettings />
-          ) : (
-            <SettingsPage />
-          )
-        ) : (
+      <div className="app-body">
+        {!sidebarCollapsed && (
           <>
-            {view.kind === 'home' && <HomePage />}
-            {view.kind === 'chat' && <ChatView chatId={view.chatId} />}
-            <div
-              style={chatMain ? { display: 'none' } : { display: 'flex', flex: 1, minWidth: 0 }}
-            >
-              <TerminalArea activeId={activeSessionId} />
+            <div className="sidebar-wrap" style={{ width: sidebarWidth }}>
+              <AppSidebar />
             </div>
+            <div className="sidebar-resizer" onMouseDown={startResize} />
           </>
         )}
+        <div className="chat-main">
+          {settingsOpen ? (
+            <ChatSettings />
+          ) : view.kind === 'home' ? (
+            <HomePage />
+          ) : (
+            <ChatView chatId={view.chatId} />
+          )}
+        </div>
+        {terminalOpen && (
+          <div className="terminal-pane-resizer" onMouseDown={startTermResize} />
+        )}
+        <div
+          className="terminal-pane"
+          style={terminalOpen ? { width: termWidth } : { display: 'none' }}
+        >
+          <TerminalPaneBar />
+          <TerminalArea activeId={activeSessionId} />
+        </div>
       </div>
       <ContextMenu />
     </div>

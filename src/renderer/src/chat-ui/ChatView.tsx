@@ -74,7 +74,7 @@ export function ChatView({ chatId }: { chatId: string }) {
   const removeQueued = useChatStore((s) => s.removeQueued)
   const streaming = useChatStore((s) => !!s.streaming[chatId])
   const openHome = useChatStore((s) => s.openHome)
-  const openTerminal = useChatStore((s) => s.openTerminal)
+  const setTerminalOpen = useChatStore((s) => s.setTerminalOpen)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [showBackBottom, setShowBackBottom] = useState(false)
   const [renaming, setRenaming] = useState(false)
@@ -122,7 +122,7 @@ export function ChatView({ chatId }: { chatId: string }) {
 
   const openInTerminal = async () => {
     const res = await api.openChatInTerminal(chatId)
-    if (res.ok) openTerminal()
+    if (res.ok) setTerminalOpen(true)
   }
 
   return (

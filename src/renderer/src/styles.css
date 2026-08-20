@@ -65,6 +65,68 @@ body {
 
 .app {
   display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+/* ---------- Title bar (frameless drag strip) ---------- */
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 36px;
+  flex-shrink: 0;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  padding-left: 8px;
+  /* Clear the native overlay window controls (min/max/close) on the right */
+  padding-right: 140px;
+  -webkit-app-region: drag;
+}
+
+.titlebar-btn {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.titlebar-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.titlebar-btn.active {
+  color: var(--accent);
+}
+
+.titlebar-title {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.titlebar-drag {
+  flex: 1;
   height: 100%;
 }
 
@@ -666,10 +728,142 @@ button:disabled {
 
 /* ---------- Terminal area ---------- */
 
-.terminal-wrap {
+.chat-main {
   flex: 1;
   min-width: 0;
   display: flex;
+  flex-direction: column;
+}
+
+/* Right-hand collapsible terminal pane */
+.terminal-pane {
+  flex-shrink: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.terminal-pane .terminal-area {
+  flex: 1;
+  min-height: 0;
+}
+
+.terminal-pane-resizer {
+  width: 4px;
+  cursor: col-resize;
+  background: transparent;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+}
+
+.terminal-pane-resizer:hover {
+  background: var(--ring);
+}
+
+.tp-bar {
+  display: flex;
+  align-items: center;
+  height: 35px;
+  flex-shrink: 0;
+  padding-right: 4px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-sidebar);
+}
+
+.tp-tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 0 4px;
+  scrollbar-width: none;
+}
+
+.tp-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tp-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 170px;
+  padding: 3px 4px 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.tp-tab:hover {
+  background: var(--bg-hover);
+}
+
+.tp-tab.active {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.tp-tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tp-tab-close {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.tp-tab:hover .tp-tab-close,
+.tp-tab.active .tp-tab-close {
+  opacity: 1;
+}
+
+.tp-tab-close:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.tp-tab .rename-input {
+  width: 90px;
+  font-size: 12px;
+}
+
+.tp-add,
+.tp-collapse {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.tp-add:hover,
+.tp-collapse:hover {
+  background: var(--bg-hover);
+  color: var(--text);
 }
 
 .terminal-area {
