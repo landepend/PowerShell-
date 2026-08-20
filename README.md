@@ -43,8 +43,8 @@ PowerShell++ 是一个 Windows 桌面应用，把「AI 编程助手」和「终�
 
 前往 [Releases](https://github.com/landepend/PowerShell-/releases) 下载最新版本：
 
-- `PowerShell++-Setup-x.y.z.exe` —— NSIS 安装包
-- `PowerShell++-x.y.z.exe` —— 免安装便携版
+- `PowerShell++.Setup.x.y.z.exe` —— NSIS 安装包
+- `PowerShell++.x.y.z.exe` —— 免安装便携版
 
 > 前置要求：AI 聊天功能依赖本机已安装并登录 [Kimi Code CLI](https://www.kimi.com/code/docs/en/)。
 
