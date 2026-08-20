@@ -1,7 +1,7 @@
 {
   "name": "powershellshell",
   "productName": "PowerShell++",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "description": "Session-centric terminal manager for PowerShell / Kimi / Codex on Windows",
   "main": "out/main/index.js",
